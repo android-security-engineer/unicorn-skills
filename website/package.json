@@ -1,0 +1,15 @@
+{
+  "name": "unicorn-skills-docs",
+  "version": "1.0.0",
+  "description": "Unicorn Engine 中文教学文档站",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.3",
+    "vitepress-plugin-mermaid": "^2.0.17"
+  }
+}

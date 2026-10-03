@@ -68,6 +68,7 @@ print(f"EDX = 0x{edx:x}")  # 输出: EDX = 0x1f
 如果你要用 C，最稳妥的是源码编译。详见 [编译与安装](./compile.md)。装好后，等价的 C 程序如下（精简自 [`samples/sample_x86.c`](https://github.com/android-security-engineer/unicorn-skills/blob/master/samples/sample_x86.c)）：
 
 ```c
+#include <stdio.h>
 #include <unicorn/unicorn.h>
 
 #define X86_CODE32 "\x41\x4a"  // INC ecx; DEC edx

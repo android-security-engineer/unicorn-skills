@@ -15,7 +15,7 @@ graph TD
     S[开始仿真] --> I1[mov ecx, -> 0xaaaaaaaa]
     I1 --> W{写 0xaaaaaaaa}
     W -->|未映射| H[Hook: UC_MEM_WRITE_UNMAPPED]
-    H --> M[uc_mem_map 动态映射 2MB]
+    H --> M[uc_mem_map 动态映射 4KB 页]
     M -->|返回 true 继续| W2[重试写入 成功]
     W2 --> I2[INC ecx]
     I2 --> I3[DEC edx]
@@ -42,8 +42,10 @@ def hook_code(uc, address, size, user_data):
 def hook_mem_invalid(uc, access, address, size, value, user_data):
     if access == UC_MEM_WRITE_UNMAPPED:
         print(f"  ⚠️ 写入未映射内存 0x{address:x}, value=0x{value:x}")
-        print(f"     → 动态映射 2MB @ 0x{address & ~0xFFF:x}")
-        uc.mem_map(address & ~0xFFFF, 2 * 1024 * 1024, UC_PROT_ALL)
+        page_size = 0x1000
+        page = address & ~(page_size - 1)
+        print(f"     → 动态映射 4KB 页 @ 0x{page:x}")
+        uc.mem_map(page, page_size, UC_PROT_ALL)
         return True   # 返回 True: 已处理, 继续执行
     return False      # 返回 False: 中止
 
@@ -52,6 +54,7 @@ mu.mem_map(ADDRESS, 2 * 1024 * 1024)          # 只映射代码段
 mu.mem_write(ADDRESS, CODE)
 
 mu.reg_write(UC_X86_REG_ECX, 0x42)
+mu.reg_write(UC_X86_REG_EDX, 0x20)
 
 # ③ 注册 Hook
 mu.hook_add(UC_HOOK_CODE, hook_code)
@@ -74,7 +77,7 @@ print(f"[0xaaaaaaaa] = 0x{int.from_bytes(val, 'little'):x}")  # 0x42
 === 开始仿真 ===
   >>> 指令 @ 0x1000000 (size=6)
   ⚠️ 写入未映射内存 0xaaaaaaaa, value=0x42
-     → 动态映射 2MB @ 0xaa0000
+     → 动态映射 4KB 页 @ 0xaaaaa000
   >>> 指令 @ 0x1000006 (size=1)
   >>> 指令 @ 0x1000007 (size=1)
 === 仿真结束 ===
@@ -153,4 +156,3 @@ uc_hook_add(uc, &hh, UC_HOOK_MEM_WRITE_UNMAPPED, hook_mem_invalid, NULL, 1, 0);
 | [`include/unicorn/unicorn.h`](https://github.com/android-security-engineer/unicorn-skills/blob/master/include/unicorn/unicorn.h) | `uc_open`/`uc_mem_map`/`uc_hook_add` 声明 |
 | [`uc.c`](https://github.com/android-security-engineer/unicorn-skills/blob/master/uc.c) | 上述 API 实现 |
 | [`samples/sample_x86.c`](https://github.com/android-security-engineer/unicorn-skills/blob/master/samples/sample_x86.c) | 完整 C 示例（含 Hook 回调签名） |
-
